@@ -326,7 +326,7 @@ tfoot td{font-weight:700;background:var(--card2)}
 
 <script>
 const D={meta:{M:{},T:[],yrs:[],all_ym:[]},kpis:{},vm:{},vs:{},tc:{},tp:{},mx:{}};
-const T=D.meta.T,M=D.meta.M,YRS=D.meta.yrs;
+let T=D.meta.T,M=D.meta.M,YRS=D.meta.yrs;
 const TC={CHICO:'#3B82F6',JAVERIANA:'#A855F7',CEDRITOS:'#F97316','AV CHILE':'#10B981','LAS VEGAS':'#EC4899'};
 const charts={};
 let GYR=D.meta.ly, GMES=D.meta.lm;
@@ -655,9 +655,12 @@ async function loadData() {
     const res = await fetch('/api/data');
     if (!res.ok) throw new Error('Error ' + res.status);
     const data = await res.json();
-    // Inject into global D
+    // Inject into global D and update all aliases
     Object.assign(D, data);
-    // Update meta refs
+    // Refresh all global aliases that depend on D.meta
+    T   = data.meta.T;
+    M   = data.meta.M;
+    YRS = data.meta.yrs;
     GYR = data.meta.ly;
     GMES = data.meta.lm;
     loader.style.display = 'none';
@@ -667,7 +670,7 @@ async function loadData() {
     // Show updated time
     const upd = new Date(data.meta.updated);
     document.getElementById('src-note').textContent =
-      'Drive · actualizado ' + upd.toLocaleDateString('es-CO',{day:'2-digit',month:'short',year:'numeric'});
+      'GitHub · actualizado ' + upd.toLocaleDateString('es-CO',{day:'2-digit',month:'short',year:'numeric'});
   } catch(e) {
     loader.innerHTML = '<div style="color:#EF4444;text-align:center"><b>Error cargando datos</b><br><small>'+e.message+'</small></div>';
   }
