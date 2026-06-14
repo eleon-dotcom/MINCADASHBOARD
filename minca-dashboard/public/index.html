@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Minca Electric · Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#0F172A;--nav:#111827;--card:#1E293B;--card2:#243447;
+  --border:#2D3F55;--text:#F1F5F9;--muted:#64748B;--soft:#94A3B8;
+  --accent:#DC2626;--blue:#3B82F6;--green:#22C55E;--red:#EF4444;
+  --amber:#F59E0B;--purple:#A855F7;--teal:#14B8A6;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',system-ui,sans-serif}
+body{background:var(--bg);color:var(--text);min-height:100vh}
+
+.topbar{background:var(--nav);border-bottom:1px solid var(--border);padding:0 24px;
+  display:flex;align-items:center;justify-content:space-between;height:54px;
+  position:sticky;top:0;z-index:300}
+.logo{font-size:15px;font-weight:700;display:flex;align-items:center;gap:10px}
+.lb{padding:2px 8px;border-radius:4px;font-size:11px;font-weight:700;background:var(--accent);color:#fff}
+.pill{font-size:11px;padding:3px 11px;border-radius:20px;font-weight:500;border:1px solid}
+.pill-b{background:#1E3A5C66;color:#93C5FD;border-color:#3B82F640}
+.pill-g{background:#0F2F2066;color:#86EFAC;border-color:#22C55E40}
+
+/* GLOBAL FILTER BAR */
+.gfbar{background:#0D1526;border-bottom:2px solid var(--accent);padding:8px 24px;
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  position:sticky;top:54px;z-index:200}
+.gf-label{font-size:11px;font-weight:700;color:var(--soft);
+  text-transform:uppercase;letter-spacing:.07em;white-space:nowrap}
+.gfg{display:flex;align-items:center;gap:6px;background:var(--card2);
+  border:1px solid var(--border);border-radius:8px;padding:5px 14px;
+  transition:border-color .15s;cursor:pointer}
+.gfg:hover{border-color:var(--blue)}
+.gfg label{font-size:11px;color:var(--muted);font-weight:600;cursor:pointer;white-space:nowrap}
+select{background:transparent;border:none;color:var(--text);font-size:14px;
+  font-weight:700;cursor:pointer;outline:none;padding:0 2px}
+select option{background:#1E293B}
+.period-chip{background:var(--blue)22;border:1px solid var(--blue)55;
+  border-radius:8px;padding:5px 14px;font-size:13px;font-weight:700;color:var(--blue);
+  white-space:nowrap}
+.reset-btn{background:transparent;border:1px solid var(--border);color:var(--muted);
+  border-radius:8px;padding:5px 14px;font-size:12px;cursor:pointer;
+  transition:all .15s;white-space:nowrap}
+.reset-btn:hover{border-color:var(--blue);color:var(--blue)}
+.gf-hint{font-size:10px;color:var(--muted);margin-left:auto}
+
+/* TABS */
+.tabs{background:var(--nav);border-bottom:1px solid var(--border);padding:0 24px;
+  display:flex;gap:2px;overflow-x:auto;position:sticky;top:102px;z-index:190}
+.tab{padding:10px 18px;font-size:13px;font-weight:500;color:var(--muted);
+  cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--blue);border-bottom-color:var(--blue);font-weight:600}
+
+.main{padding:18px 24px;max-width:1600px;margin:0 auto}
+
+/* KPIs */
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:18px}
+.kpi{background:var(--card);border:1px solid var(--border);border-radius:10px;
+  padding:15px 16px;position:relative;overflow:hidden}
+.kpi::after{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:10px 10px 0 0}
+.kpi.k1::after{background:var(--blue)}.kpi.k2::after{background:#14B8A6}
+.kpi.k3::after{background:var(--amber)}.kpi.k4::after{background:var(--purple)}
+.kpi.k5::after{background:var(--green)}
+.kpi-lbl{font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;
+  letter-spacing:.06em;margin-bottom:7px}
+.kpi-val{font-size:22px;font-weight:800;margin-bottom:4px;line-height:1}
+.kpi-sub{font-size:11px;color:var(--muted)}
+.up{color:#22C55E;font-weight:700}.dn{color:#EF4444;font-weight:700}
+
+/* SECTION */
+.sec{display:none}.sec.active{display:block}
+
+/* GRIDS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+
+/* CARD */
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px}
+.card-ttl{font-size:11px;font-weight:700;color:var(--soft);text-transform:uppercase;
+  letter-spacing:.06em;margin-bottom:14px}
+
+/* SECTION FILTER BAR (local, inside section) */
+.sec-filters{display:flex;gap:8px;align-items:center;margin-bottom:14px;flex-wrap:wrap}
+.sfg{display:flex;align-items:center;gap:6px;background:var(--card2);
+  border:1px solid var(--border);border-radius:8px;padding:5px 12px}
+.sfg label{font-size:11px;color:var(--muted);font-weight:600}
+.sfg select{font-size:13px;font-weight:600}
+.sec-filter-note{font-size:11px;color:var(--muted);padding:5px 12px;
+  background:var(--card2);border:1px solid var(--border);border-radius:8px}
+
+/* INFO NOTE */
+.info{background:#1E3A5C22;border:1px solid var(--blue)22;border-radius:8px;
+  padding:9px 14px;font-size:12px;color:var(--soft);margin-bottom:12px;
+  display:flex;align-items:center;gap:8px}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{padding:8px 10px;color:var(--muted);font-size:10px;font-weight:700;
+  text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);
+  text-align:left;white-space:nowrap}
+td{padding:8px 10px;border-bottom:1px solid #1E293B99;vertical-align:middle}
+tbody tr:hover td{background:var(--card2)}
+tbody tr:last-child td{border-bottom:none}
+.num{text-align:right}.ctr{text-align:center}
+tfoot td{font-weight:700;background:var(--card2)}
+
+/* TALLER BADGES */
+.tb{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600}
+.tb-CHICO{color:#3B82F6;background:#1E3A5C44}
+.tb-JAVERIANA{color:#A855F7;background:#3B1F4E44}
+.tb-CEDRITOS{color:#F97316;background:#43200044}
+.tb-AVC{color:#10B981;background:#0F2F2044}
+.tb-LV{color:#EC4899;background:#3B0F2244}
+.tb-ALL{color:#F1F5F9;background:#2D3F5566}
+
+/* CHIPS */
+.chip{display:inline-block;padding:2px 7px;border-radius:8px;font-size:10px;font-weight:600}
+.chip-s{background:#1E3A5C;color:#93C5FD}.chip-p{background:#3B1F4E;color:#D8B4FE}
+
+/* RANK */
+.rk{width:22px;height:22px;border-radius:50%;display:inline-flex;
+  align-items:center;justify-content:center;font-size:10px;font-weight:700}
+.rk1{background:#78350F;color:#FDE68A}.rk2{background:#1F2937;color:#D1D5DB}
+.rk3{background:#450A0A;color:#FCA5A5}.rkn{background:#1E293B;color:#475569}
+
+/* DELTA */
+.dl{display:inline-block;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700}
+.dl-p{background:#14532D44;color:#86EFAC}.dl-n{background:#7F1D1D44;color:#FCA5A5}
+
+.ch-230{height:230px;position:relative}
+.ch-280{height:280px;position:relative}
+.ch-300{height:300px;position:relative}
+
+@media(max-width:900px){
+  .kpis{grid-template-columns:1fr 1fr}
+  .g2,.g3{grid-template-columns:1fr}
+  .tabs{top:145px}
+  .gf-hint{display:none}
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="logo">
+    <span style="font-size:20px">🏍</span>
+    MINCA ELECTRIC
+    <span class="lb">DASHBOARD</span>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <div class="pill pill-b" id="hdr-period">—</div>
+    <div class="pill pill-g">Ventas Talleres</div>
+    <div class="pill" id="src-note" style="background:#0F2F2044;color:#86EFAC;border-color:#22C55E40;font-size:10px">Google Drive</div>
+  </div>
+</div>
+
+<!-- GLOBAL FILTER BAR -->
+<div class="gfbar">
+  <span class="gf-label">🗓 Filtro global</span>
+  <div class="gfg">
+    <label for="g-yr">AÑO</label>
+    <select id="g-yr" onchange="applyGlobal()"></select>
+  </div>
+  <div class="gfg">
+    <label for="g-mes">MES</label>
+    <select id="g-mes" onchange="applyGlobal()"></select>
+  </div>
+  <div class="period-chip" id="g-display">—</div>
+  <button class="reset-btn" onclick="resetGlobal()">↺ Restablecer</button>
+  <span class="gf-hint">Aplica a todas las pestañas simultáneamente</span>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <div class="tab active" onclick="nav('ventas',this)">① Ventas</div>
+  <div class="tab" onclick="nav('semanas',this)">② Semanas</div>
+  <div class="tab" onclick="nav('tecnicos',this)">③ Técnicos</div>
+  <div class="tab" onclick="nav('productos',this)">④ Productos</div>
+  <div class="tab" onclick="nav('mix',this)">⑤ Mix</div>
+</div>
+
+<div class="main">
+
+<!-- KPIs -->
+<div class="kpis">
+  <div class="kpi k1">
+    <div class="kpi-lbl">Ventas mes seleccionado</div>
+    <div class="kpi-val" id="k-vc">—</div>
+    <div class="kpi-sub" id="k-d">—</div>
+  </div>
+  <div class="kpi k2">
+    <div class="kpi-lbl">Órdenes del mes</div>
+    <div class="kpi-val" id="k-oc">—</div>
+    <div class="kpi-sub" id="k-tk">—</div>
+  </div>
+  <div class="kpi k3">
+    <div class="kpi-lbl">Mes anterior</div>
+    <div class="kpi-val" id="k-vp">—</div>
+    <div class="kpi-sub" id="k-pl">—</div>
+  </div>
+  <div class="kpi k4">
+    <div class="kpi-lbl">Acumulado año</div>
+    <div class="kpi-val" id="k-vyr">—</div>
+    <div class="kpi-sub" id="k-yl">—</div>
+  </div>
+  <div class="kpi k5">
+    <div class="kpi-lbl">Taller líder del mes</div>
+    <div class="kpi-val" id="k-top" style="font-size:16px">—</div>
+    <div class="kpi-sub" id="k-topl">—</div>
+  </div>
+</div>
+
+<!-- ① VENTAS -->
+<div class="sec active" id="sec-ventas">
+  <div class="info">📊 Año seleccionado: <b id="vta-yr-lbl">—</b> · Mes resaltado en tabla: <b id="vta-mes-lbl">—</b></div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-ttl">Ventas mensuales por taller — año completo</div>
+      <div class="ch-280"><canvas id="ch-vta-mes"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-ttl">Participación por taller — mes seleccionado</div>
+      <div class="ch-280"><canvas id="ch-vta-pie"></canvas></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-ttl">Detalle mensual por taller</div>
+    <div class="tbl-wrap"><table id="tbl-vta"></table></div>
+  </div>
+</div>
+
+<!-- ② SEMANAS -->
+<div class="sec" id="sec-semanas">
+  <div class="info">📈 Últimas 12 semanas disponibles en el sistema</div>
+  <div class="card" style="margin-bottom:14px">
+    <div class="card-ttl">Tendencia semanal de ventas por taller</div>
+    <div class="ch-300"><canvas id="ch-sem"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="card-ttl">Comparativo últimas 4 semanas</div>
+    <div class="tbl-wrap"><table id="tbl-sem"></table></div>
+  </div>
+</div>
+
+<!-- ③ TÉCNICOS -->
+<div class="sec" id="sec-tecnicos">
+  <div class="info" id="tec-info">👨‍🔧 Período: —</div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-ttl">Top 8 técnicos — ventas del mes</div>
+      <div class="ch-250" style="height:250px;position:relative"><canvas id="ch-tec-vta"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-ttl">Líneas por orden — top 8 técnicos</div>
+      <div class="ch-250" style="height:250px;position:relative"><canvas id="ch-tec-lpo"></canvas></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-ttl">Productividad completa del mes</div>
+    <div class="tbl-wrap"><table id="tbl-tec"></table></div>
+  </div>
+</div>
+
+<!-- ④ PRODUCTOS -->
+<div class="sec" id="sec-productos">
+  <!-- LOCAL FILTERS -->
+  <div class="sec-filters">
+    <div class="sfg">
+      <label>TALLER</label>
+      <select id="p-taller" onchange="rProd()">
+        <option value="ALL">Todos los talleres</option>
+      </select>
+    </div>
+    <div class="sfg">
+      <label>TIPO</label>
+      <select id="p-tipo" onchange="rProd()">
+        <option value="ALL">Todos</option>
+        <option value="SERVICIO">Solo Servicios</option>
+        <option value="PRODUCTO">Solo Productos</option>
+      </select>
+    </div>
+    <div class="sec-filter-note" id="prod-info">—</div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-ttl">Top 10 productos y servicios</div>
+      <div class="ch-300"><canvas id="ch-prod-top"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-ttl">Servicios vs Productos — participación</div>
+      <div class="ch-300"><canvas id="ch-prod-tipo"></canvas></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-ttl">Top 15 detallado</div>
+    <div class="tbl-wrap"><table id="tbl-prod"></table></div>
+  </div>
+</div>
+
+<!-- ⑤ MIX -->
+<div class="sec" id="sec-mix">
+  <div class="info" id="mix-info">⚙️ Período: —</div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-ttl">% Servicio vs Producto por taller</div>
+      <div class="ch-250" style="height:250px;position:relative"><canvas id="ch-mix-pct"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-ttl">Ventas absolutas por tipo</div>
+      <div class="ch-250" style="height:250px;position:relative"><canvas id="ch-mix-abs"></canvas></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-ttl">Detalle mix por taller</div>
+    <div class="tbl-wrap"><table id="tbl-mix"></table></div>
+  </div>
+</div>
+
+</div>
+
+<script>
+const D={meta:{M:{},T:[],yrs:[],all_ym:[]},kpis:{},vm:{},vs:{},tc:{},tp:{},mx:{}};
+const T=D.meta.T,M=D.meta.M,YRS=D.meta.yrs;
+const TC={CHICO:'#3B82F6',JAVERIANA:'#A855F7',CEDRITOS:'#F97316','AV CHILE':'#10B981','LAS VEGAS':'#EC4899'};
+const charts={};
+let GYR=D.meta.ly, GMES=D.meta.lm;
+
+// ── Helpers
+const f=v=>v>=1e6?'$'+(v/1e6).toFixed(1)+'M':v>=1e3?'$'+Math.round(v/1e3)+'K':'$'+(v||0).toLocaleString('es-CO');
+const ff=v=>'$'+(v||0).toLocaleString('es-CO');
+const p=v=>(+v||0).toFixed(1)+'%';
+const mk=(yr,m)=>yr+'-'+m;
+const r1=v=>Math.round(v*10)/10;
+const dl=v=>v==null?'—':`<span class="dl ${v>=0?'dl-p':'dl-n'}">${v>=0?'▲':'▼'} ${Math.abs(v).toFixed(1)}%</span>`;
+const months_of=yr=>D.meta.all_ym.filter(([y])=>y===yr).map(([,m])=>m).sort((a,b)=>a-b);
+function tbCls(t){return t==='CHICO'?'tb tb-CHICO':t==='JAVERIANA'?'tb tb-JAVERIANA':t==='CEDRITOS'?'tb tb-CEDRITOS':t==='AV CHILE'?'tb tb-AVC':t==='LAS VEGAS'?'tb tb-LV':'tb tb-ALL';}
+
+function mkChart(id,cfg){
+  if(charts[id])charts[id].destroy();
+  const ctx=document.getElementById(id); if(!ctx)return;
+  charts[id]=new Chart(ctx,{
+    type:cfg.type,data:cfg.data,
+    options:{responsive:true,maintainAspectRatio:false,animation:{duration:350},
+      plugins:{legend:{position:cfg.lpos||'bottom',labels:{color:'#94A3B8',font:{size:10},boxWidth:12,padding:10}},
+               tooltip:{callbacks:cfg.ttCb||{}}},
+      ...(cfg.opts||{}),
+      scales:(cfg.type==='bar'||cfg.type==='line')?{
+        x:{ticks:{color:'#64748B',font:{size:9}},grid:{color:'#1E293B'},...(cfg.xEx||{})},
+        y:{ticks:{color:'#64748B',font:{size:9},callback:cfg.yCb||(v=>f(v))},
+           grid:{color:'#1E293B44'},...(cfg.yEx||{})}
+      }:undefined
+    }
+  });
+}
+
+// ── GLOBAL FILTER
+function initSelects(){
+  const gy=document.getElementById('g-yr'), gm=document.getElementById('g-mes');
+  YRS.forEach(y=>{const o=new Option(y,y);if(y===GYR)o.selected=true;gy.add(o);});
+  for(let i=1;i<=12;i++){const o=new Option(M[i],i);if(i===GMES)o.selected=true;gm.add(o);}
+
+  // Productos taller filter
+  const pt=document.getElementById('p-taller');
+  T.forEach(t=>{pt.add(new Option(t,t));});
+  upDisplay();
+}
+
+function applyGlobal(){
+  GYR=+document.getElementById('g-yr').value;
+  GMES=+document.getElementById('g-mes').value;
+  const k=mk(GYR,GMES);
+  if(!D.vm[k]){
+    const av=D.meta.all_ym.filter(([y])=>y===GYR).map(([,m])=>m);
+    if(!av.length)return;
+    GMES=av.reduce((a,b)=>Math.abs(b-GMES)<Math.abs(a-GMES)?b:a);
+    document.getElementById('g-mes').value=GMES;
+  }
+  upDisplay(); upKPIs();
+  rVentas(); rSemanas(); rTec(); rProd(); rMix();
+}
+
+function resetGlobal(){
+  GYR=D.meta.ly; GMES=D.meta.lm;
+  document.getElementById('g-yr').value=GYR;
+  document.getElementById('g-mes').value=GMES;
+  applyGlobal();
+}
+
+function upDisplay(){
+  const txt=M[GMES]+' '+GYR;
+  document.getElementById('g-display').textContent=txt;
+  document.getElementById('hdr-period').textContent=txt;
+  // Data sourced from Google Drive - last updated from file
+  const srcNote=document.getElementById('src-note');
+  if(srcNote) srcNote.textContent='Fuente: Google Drive · Entregable Semana 15 · Actualizado: 11 Jun 2026';
+}
+
+// ── KPIs
+function upKPIs(){
+  const k=mk(GYR,GMES), dm=D.vm[k];
+  const vc=dm?dm.total:0, oc=dm?dm.ordenes:0;
+  document.getElementById('k-vc').textContent=f(vc);
+  document.getElementById('k-oc').textContent=oc.toLocaleString('es-CO');
+  document.getElementById('k-tk').textContent='Ticket prom: '+ff(oc?Math.round(vc/oc):0);
+
+  const pm=GMES>1?GMES-1:12, py=GMES>1?GYR:GYR-1;
+  const dp=D.vm[mk(py,pm)]; const vp=dp?dp.total:0;
+  const dv=vp?r1((vc-vp)/vp*100):null;
+  document.getElementById('k-d').innerHTML=dv!=null?dl(dv)+' vs '+M[pm]+' '+py:'Sin datos previos';
+  document.getElementById('k-vp').textContent=f(vp);
+  document.getElementById('k-pl').textContent=M[pm]+' '+py;
+
+  const vyr=D.meta.all_ym.filter(([y,m])=>y===GYR&&m<=GMES)
+    .reduce((s,[y,m])=>s+(D.vm[mk(y,m)]?D.vm[mk(y,m)].total:0),0);
+  document.getElementById('k-vyr').textContent=f(vyr);
+  document.getElementById('k-yl').textContent='Ene–'+M[GMES]+' '+GYR;
+
+  if(dm&&dm.talleres){
+    const top=T.map(t=>({t,v:dm.talleres[t]?dm.talleres[t].v:0})).sort((a,b)=>b.v-a.v)[0];
+    const el=document.getElementById('k-top');
+    el.textContent=top.t; el.style.color=TC[top.t];
+    document.getElementById('k-topl').textContent=f(top.v)+' ('+p(vc?top.v/vc*100:0)+')';
+  }
+}
+
+// ① VENTAS
+function rVentas(){
+  const ms=months_of(GYR), lbs=ms.map(m=>M[m]);
+  document.getElementById('vta-yr-lbl').textContent=GYR;
+  document.getElementById('vta-mes-lbl').textContent=M[GMES]+' '+GYR;
+
+  const ds=T.map(t=>({label:t,backgroundColor:TC[t]+'CC',borderRadius:3,
+    data:ms.map(m=>{const d=D.vm[mk(GYR,m)];return d&&d.talleres[t]?d.talleres[t].v:0;})}));
+  mkChart('ch-vta-mes',{type:'bar',data:{labels:lbs,datasets:ds}});
+
+  const k=mk(GYR,GMES), dm=D.vm[k];
+  const tots=T.map(t=>dm&&dm.talleres[t]?dm.talleres[t].v:0);
+  const gt=tots.reduce((a,b)=>a+b,0);
+  mkChart('ch-vta-pie',{type:'doughnut',
+    data:{labels:T,datasets:[{data:tots,backgroundColor:T.map(t=>TC[t]),borderColor:'#0F172A',borderWidth:2}]},
+    lpos:'right',opts:{cutout:'55%'},
+    ttCb:{label:ctx=>ctx.label+': '+f(ctx.raw)+' ('+p(gt?ctx.raw/gt*100:0)+')'}});
+
+  const tbl=document.getElementById('tbl-vta');
+  const h='<thead><tr><th>Taller</th>'+lbs.map(l=>'<th class="num">'+l+'</th>').join('')+'<th class="num">Total año</th><th class="num">Órdenes</th></tr></thead>';
+  let bd='<tbody>'+T.map(t=>{
+    let tv=0,to=0;
+    const cs=ms.map(m=>{const d=D.vm[mk(GYR,m)],td=d&&d.talleres[t]?d.talleres[t]:{v:0,o:0};
+      tv+=td.v; to+=td.o;
+      const sel=m===GMES?`style="font-weight:800;color:${TC[t]}"` :'';
+      return`<td class="num" ${sel}>${f(td.v)}</td>`;}).join('');
+    return`<tr><td><span class="${tbCls(t)}">${t}</span></td>${cs}<td class="num"><b>${f(tv)}</b></td><td class="num">${to.toLocaleString()}</td></tr>`;
+  }).join('')+'</tbody>';
+  let trf='<tfoot><tr><td>TOTAL</td>';
+  let gtv=0;
+  ms.forEach(m=>{const v=T.reduce((s,t)=>{const d=D.vm[mk(GYR,m)];return s+(d&&d.talleres[t]?d.talleres[t].v:0);},0);gtv+=v;trf+=`<td class="num">${f(v)}</td>`;});
+  const gto=T.reduce((s,t)=>s+ms.reduce((ss,m)=>{const d=D.vm[mk(GYR,m)];return ss+(d&&d.talleres[t]?d.talleres[t].o:0);},0),0);
+  trf+=`<td class="num">${f(gtv)}</td><td class="num">${gto.toLocaleString()}</td></tr></tfoot>`;
+  tbl.innerHTML=h+bd+trf;
+}
+
+// ② SEMANAS
+function rSemanas(){
+  const sems=Object.keys(D.vs).map(Number).sort((a,b)=>a-b).slice(-12);
+  const lbs=sems.map(s=>'Sem '+s);
+  const ds=T.map(t=>({label:t,borderColor:TC[t],backgroundColor:TC[t]+'18',
+    fill:true,tension:.3,pointRadius:3,borderWidth:2,
+    data:sems.map(s=>D.vs[s]?D.vs[s].t[t]||0:0)}));
+  mkChart('ch-sem',{type:'line',data:{labels:lbs,datasets:ds}});
+
+  const l4=sems.slice(-4);
+  const at4=T.reduce((s,t)=>s+l4.reduce((ss,sk)=>ss+(D.vs[sk]?D.vs[sk].t[t]||0:0),0),0);
+  const tbl=document.getElementById('tbl-sem');
+  const h='<thead><tr><th>Taller</th>'+l4.map(s=>'<th class="num">Sem '+s+'</th>').join('')+'<th class="ctr">Δ %</th><th class="num">Acum. 4 sem</th><th class="num">%</th></tr></thead>';
+  const bd='<tbody>'+T.map(t=>{
+    const vs=l4.map(s=>D.vs[s]?D.vs[s].t[t]||0:0);
+    const dc=vs[3]-vs[2],dp=vs[2]?r1(dc/vs[2]*100):null,ac=vs.reduce((a,b)=>a+b,0);
+    return`<tr><td><span class="${tbCls(t)}">${t}</span></td>${vs.map(v=>'<td class="num">'+f(v)+'</td>').join('')}<td class="ctr">${dl(dp)}</td><td class="num"><b>${f(ac)}</b></td><td class="num">${p(at4?ac/at4*100:0)}</td></tr>`;
+  }).join('')+'</tbody>';
+  tbl.innerHTML=h+bd;
+}
+
+// ③ TÉCNICOS
+function rTec(){
+  const k=mk(GYR,GMES),data=D.tc[k]||[];
+  document.getElementById('tec-info').textContent=
+    M[GMES]+' '+GYR+' · '+data.length+' técnicos · Órdenes = total en todos los talleres';
+  const t8=data.slice(0,8);
+  mkChart('ch-tec-vta',{type:'bar',
+    data:{labels:t8.map(d=>d.TECNICO.split(' ')[0]),
+      datasets:[{backgroundColor:t8.map(d=>TC[d.TALLER]||'#3B82F6'),borderRadius:3,data:t8.map(d=>d.v)}]},
+    opts:{indexAxis:'y',plugins:{legend:{display:false}}},
+    xEx:{ticks:{callback:v=>f(v),color:'#64748B'}},
+    yEx:{ticks:{font:{size:9},color:'#94A3B8'}},yCb:v=>f(v)});
+  mkChart('ch-tec-lpo',{type:'bar',
+    data:{labels:t8.map(d=>d.TECNICO.split(' ')[0]),
+      datasets:[{backgroundColor:'#14B8A666',borderColor:'#14B8A6',borderWidth:1,
+        borderRadius:3,data:t8.map(d=>d.lpo)}]},
+    opts:{indexAxis:'y',plugins:{legend:{display:false}}},
+    xEx:{ticks:{callback:v=>v.toFixed(1),color:'#64748B'}},
+    yEx:{ticks:{font:{size:9},color:'#94A3B8'}},yCb:v=>v.toFixed(1)});
+
+  const tbl=document.getElementById('tbl-tec');
+  const prevMlbl=M[GMES>1?GMES-1:12]+' '+(GMES>1?GYR:GYR-1);
+  const h='<thead><tr>'
+    +'<th>#</th><th>Técnico</th><th>Taller principal</th>'
+    +'<th class="num">Ventas mes</th>'
+    +'<th class="num">'+prevMlbl+'</th>'
+    +'<th class="ctr">\u0394 vs mes ant.</th>'
+    +'<th class="ctr" title="Total de órdenes en todos los talleres">Órdenes totales</th>'
+    +'<th class="num">Ticket prom.</th>'
+    +'<th class="num">Líneas/Orden</th>'
+    +'<th class="ctr">Talleres</th>'
+    +'<th class="ctr">vs Prom. Taller</th>'
+    +'</tr></thead>';
+  const bd='<tbody>'+data.map((d,i)=>{
+    const rc=i===0?'rk1':i===1?'rk2':i===2?'rk3':'rkn';
+    // Talleres badge: if >1 show count with tooltip listing them
+    const talBadge=d.nt>1
+      ? '<span title="'+d.tl.join(', ')+'" style="background:#1E3A5C;color:#93C5FD;padding:2px 7px;border-radius:8px;font-size:10px;font-weight:700;cursor:help">'+d.nt+' talleres</span>'
+      : '<span class="'+tbCls(d.TALLER)+'">'+d.TALLER+'</span>';
+    return '<tr>'
+      +'<td><span class="rk '+rc+'">'+(i+1)+'</span></td>'
+      +'<td><b>'+d.TECNICO+'</b></td>'
+      +'<td>'+talBadge+'</td>'
+      +'<td class="num" style="font-weight:700">'+ff(d.v)+'</td>'
+      +'<td class="num" style="color:var(--muted)">'+(d.vp?ff(d.vp):'—')+'</td>'
+      +'<td class="ctr">'+dl(d.dp)+'</td>'
+      +'<td class="ctr" style="font-weight:800;font-size:14px">'+d.o+'</td>'
+      +'<td class="num">'+ff(d.tk)+'</td>'
+      +'<td class="ctr">'+((d.lpo||0).toFixed(2))+'</td>'
+      +'<td class="ctr" style="font-size:11px;color:var(--muted)">'+d.tl.join(', ')+'</td>'
+      +'<td class="ctr">'+dl(d.vs)+'</td>'
+      +'</tr>';
+  }).join('')+'</tbody>';
+  tbl.innerHTML=h+bd;
+}
+
+// ④ PRODUCTOS — con filtros locales
+function rProd(){
+  const taller=document.getElementById('p-taller').value;
+  const tipo=document.getElementById('p-tipo').value;
+  const k=mk(GYR,GMES);
+  const scope_key=taller==='ALL'?'ALL':taller;
+  let data=(D.tp[k]&&D.tp[k][scope_key])||[];
+  if(tipo!=='ALL') data=data.filter(d=>d.ti===tipo);
+
+  const total_scope=data.reduce((s,d)=>s+d.v,0);
+  const tallerlbl=taller==='ALL'?'Todos los talleres':taller;
+  const tipolbl=tipo==='ALL'?'todos los tipos':tipo;
+  document.getElementById('prod-info').textContent=
+    M[GMES]+' '+GYR+' · '+tallerlbl+' · '+tipolbl+' · '+data.length+' ítems';
+
+  const t10=data.slice(0,10);
+  const colors=t10.map(d=>d.ti==='SERVICIO'?'#3B82F6BB':'#A855F7BB');
+  mkChart('ch-prod-top',{type:'bar',
+    data:{labels:t10.map(d=>d.p.length>24?d.p.substring(0,24)+'…':d.p),
+      datasets:[{backgroundColor:colors,borderRadius:3,data:t10.map(d=>d.v)}]},
+    opts:{indexAxis:'y',plugins:{legend:{display:false}}},
+    xEx:{ticks:{callback:v=>f(v),color:'#64748B'}},
+    yEx:{ticks:{font:{size:9},color:'#94A3B8'}},yCb:v=>f(v)});
+
+  // Pie: use full scope (before tipo filter) for context
+  const raw_data=(D.tp[k]&&D.tp[k][scope_key])||[];
+  const sv_all=raw_data.filter(d=>d.ti==='SERVICIO').reduce((s,d)=>s+d.v,0);
+  const pv_all=raw_data.filter(d=>d.ti==='PRODUCTO').reduce((s,d)=>s+d.v,0);
+  mkChart('ch-prod-tipo',{type:'doughnut',
+    data:{labels:['Servicios','Productos'],
+      datasets:[{data:[sv_all,pv_all],backgroundColor:['#3B82F6BB','#A855F7BB'],
+        borderColor:'#0F172A',borderWidth:2}]},
+    lpos:'bottom',opts:{cutout:'55%'},
+    ttCb:{label:ctx=>{const tot=sv_all+pv_all;return ctx.label+': '+f(ctx.raw)+' ('+p(tot?ctx.raw/tot*100:0)+')';}}});
+
+  const tbl=document.getElementById('tbl-prod');
+  const h='<thead><tr><th>#</th><th>Producto / Servicio</th><th>Tipo</th><th class="num">Ventas</th><th class="num">% del total</th><th class="num">Unidades</th></tr></thead>';
+  const bd='<tbody>'+data.map((d,i)=>{
+    const rc=i===0?'rk1':i===1?'rk2':i===2?'rk3':'rkn';
+    const pct_real=total_scope?r1(d.v/total_scope*100):0;
+    return`<tr><td><span class="rk ${rc}">${i+1}</span></td><td>${d.p}</td>
+      <td><span class="chip ${d.ti==='SERVICIO'?'chip-s':'chip-p'}">${d.ti}</span></td>
+      <td class="num">${ff(d.v)}</td>
+      <td class="num"><b>${p(pct_real)}</b>
+        <div style="width:${Math.min(pct_real*3,90)}px;height:3px;background:${d.ti==='SERVICIO'?'#3B82F6':'#A855F7'};border-radius:2px;margin-top:3px"></div>
+      </td>
+      <td class="num">${d.c}</td></tr>`;
+  }).join('')+'</tbody>';
+  tbl.innerHTML=h+bd;
+}
+
+// ⑤ MIX
+function rMix(){
+  const k=mk(GYR,GMES);
+  document.getElementById('mix-info').textContent='⚙️ '+M[GMES]+' '+GYR+' · Servicio = mano de obra · Producto = repuestos y accesorios';
+  const ps=T.map(t=>D.mx[k]&&D.mx[k][t]?D.mx[k][t].ps:0);
+  const pp=T.map(t=>100-(D.mx[k]&&D.mx[k][t]?D.mx[k][t].ps:0));
+  mkChart('ch-mix-pct',{type:'bar',
+    data:{labels:T,datasets:[
+      {label:'% Servicio',backgroundColor:'#3B82F6BB',borderRadius:2,data:ps},
+      {label:'% Producto',backgroundColor:'#A855F7BB',borderRadius:2,data:pp}]},
+    opts:{scales:{x:{stacked:true},y:{stacked:true,ticks:{callback:v=>v+'%',color:'#64748B'},grid:{color:'#1E293B44'}}}},
+    yCb:v=>v+'%'});
+  mkChart('ch-mix-abs',{type:'bar',
+    data:{labels:T,datasets:[
+      {label:'Servicios',backgroundColor:'#3B82F6BB',borderRadius:2,
+        data:T.map(t=>D.mx[k]&&D.mx[k][t]?D.mx[k][t].sv:0)},
+      {label:'Productos',backgroundColor:'#A855F7BB',borderRadius:2,
+        data:T.map(t=>D.mx[k]&&D.mx[k][t]?D.mx[k][t].pv:0)}]}});
+
+  const tbl=document.getElementById('tbl-mix');
+  const h='<thead><tr><th>Taller</th><th class="num">Venta Total</th><th class="num">Servicios</th><th class="ctr">% Serv.</th><th class="num">Productos</th><th class="ctr">% Prod.</th><th class="ctr">Órdenes</th><th class="num">Ticket prom.</th></tr></thead>';
+  const bd='<tbody>'+T.map(t=>{
+    const dm=D.mx[k]&&D.mx[k][t]?D.mx[k][t]:{sv:0,pv:0,tot:0,ps:0,pp:0};
+    const dt=D.vm[k]&&D.vm[k].talleres[t]?D.vm[k].talleres[t]:{o:0,tk:0};
+    return`<tr><td><span class="${tbCls(t)}">${t}</span></td>
+      <td class="num"><b>${ff(dm.tot)}</b></td>
+      <td class="num">${ff(dm.sv)}</td>
+      <td class="ctr" style="font-weight:700;color:#3B82F6">${p(dm.ps)}</td>
+      <td class="num">${ff(dm.pv)}</td>
+      <td class="ctr" style="font-weight:700;color:#A855F7">${p(dm.pp)}</td>
+      <td class="ctr">${dt.o}</td>
+      <td class="num">${ff(dt.tk)}</td></tr>`;
+  }).join('')+'</tbody>';
+  const tv=T.reduce((s,t)=>{const d=D.mx[k]&&D.mx[k][t];return s+(d?d.tot:0);},0);
+  const tsv=T.reduce((s,t)=>{const d=D.mx[k]&&D.mx[k][t];return s+(d?d.sv:0);},0);
+  const tpv=T.reduce((s,t)=>{const d=D.mx[k]&&D.mx[k][t];return s+(d?d.pv:0);},0);
+  const tot_o=T.reduce((s,t)=>{const d=D.vm[k]&&D.vm[k].talleres[t];return s+(d?d.o:0);},0);
+  const tot_tk=tot_o?Math.round(tv/tot_o):0;
+  const tf=`<tfoot><tr><td>TOTAL</td><td class="num">${ff(tv)}</td><td class="num">${ff(tsv)}</td>
+    <td class="ctr">${p(tv?tsv/tv*100:0)}</td><td class="num">${ff(tpv)}</td>
+    <td class="ctr">${p(tv?tpv/tv*100:0)}</td>
+    <td class="ctr" style="font-weight:700">${tot_o.toLocaleString('es-CO')}</td>
+    <td class="num" style="font-weight:700">${ff(tot_tk)}</td></tr></tfoot>`;
+  tbl.innerHTML=h+bd+tf;
+}
+
+// ── NAV
+function nav(name,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));
+  document.getElementById('sec-'+name).classList.add('active');
+}
+
+// ── INIT
+async function loadData() {
+  const loader = document.getElementById('loader');
+  try {
+    loader.style.display = 'flex';
+    const res = await fetch('/api/data');
+    if (!res.ok) throw new Error('Error ' + res.status);
+    const data = await res.json();
+    // Inject into global D
+    Object.assign(D, data);
+    // Update meta refs
+    GYR = data.meta.ly;
+    GMES = data.meta.lm;
+    loader.style.display = 'none';
+    initSelects();
+    upKPIs();
+    rVentas(); rSemanas(); rTec(); rProd(); rMix();
+    // Show updated time
+    const upd = new Date(data.meta.updated);
+    document.getElementById('src-note').textContent =
+      'Drive · actualizado ' + upd.toLocaleDateString('es-CO',{day:'2-digit',month:'short',year:'numeric'});
+  } catch(e) {
+    loader.innerHTML = '<div style="color:#EF4444;text-align:center"><b>Error cargando datos</b><br><small>'+e.message+'</small></div>';
+  }
+}
+window.addEventListener('load', loadData);
+</script>
+
+<div id="loader" style="position:fixed;inset:0;background:#0F172Aee;z-index:9999;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px">
+  <div style="width:48px;height:48px;border:3px solid #1E293B;border-top-color:#3B82F6;
+    border-radius:50%;animation:spin 0.8s linear infinite"></div>
+  <div style="color:#94A3B8;font-size:14px">Cargando datos desde Google Drive...</div>
+</div>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+</body>
+</html>
